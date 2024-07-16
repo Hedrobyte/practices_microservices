@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres-user:
+    image: postgres:15
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: ms_user
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+
+  user-service:
+    build:
+      context: .
+      dockerfile: user/Dockerfile
+    container_name: user-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/ms_user
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_RABBITMQ_ADDRESSES: amqps://******:******-*****@stingray.rmq.cloudamqp.com/*****
+    ports:
+      - "8081:8081"
+    depends_on:
+      - postgres-user
+
+  postgres-email:
+    image: postgres:15
+    container_name: postgres-email
+    environment:
+      POSTGRES_DB: ms_email
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres-email-data:/var/lib/postgresql/data
+
+  email-service:
+    build:
+      context: .
+      dockerfile: email/Dockerfile
+    container_name: email-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-email:5432/ms_email
+      SPRING_DATASOURCE_USERNAME: admin
+      SPRING_DATASOURCE_PASSWORD: admin
+      SPRING_RABBITMQ_ADDRESSES: amqps://******:******-*****@stingray.rmq.cloudamqp.com/*****
+      SPRING_MAIL_HOST: sandbox.smtp.mailtrap.io
+      SPRING_MAIL_PORT: 2525
+      SPRING_MAIL_USERNAME: *****
+      SPRING_MAIL_PASSWORD: *****
+    ports:
+      - "8082:8082"
+    depends_on:
+      - postgres-email
+
+volumes:
+  postgres-user-data:
+  postgres-email-data:
